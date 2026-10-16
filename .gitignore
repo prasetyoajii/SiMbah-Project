@@ -1,0 +1,10 @@
+.env
+pairing.json
+namaalat.json
+jadwal.json
+bahasa.json
+jeda.json
+suara_cache/
+venv/
+__pycache__/
+*.crt
