@@ -1,6 +1,6 @@
 # 💊 SiMbah — Sistem Ingat Minum obat Berbasis Ai dan Hardware
 
-> Pengingat minum obat untuk lansia. Keluarga cukup **memotret label obat** lewat Telegram, AI membaca jadwalnya, lalu alat **ESP32** berbunyi tepat waktu. Begitu obat diminum (atau terlewat), keluarga langsung mendapat notifikasi.
+> Pengingat minum obat untuk lansia. Keluarga cukup **memotret label obat** lewat Telegram, AI membaca jadwalnya, lalu alat **ESP32** berbunyi tepat waktu mengingatkan lansia menggunakan fitur Text-To-Speech pada alat IoT. Begitu obat diminum (atau terlewat), keluarga langsung mendapat notifikasi.
 
 Proyek ini dibuat untuk **hackathon**. Alat dapat disimulasikan penuh di [Wokwi](https://wokwi.com), jadi tidak perlu hardware fisik untuk mencobanya.
 
@@ -492,10 +492,11 @@ SiMbah adalah **alat bantu pengingat**, bukan pengganti saran dokter atau apotek
 ## 👥 Tim
 
 <!-- Isi nama tim dan anggota -->
-- Nama tim: _…_
-- Anggota: _…_
+- Nama tim: 
+Tim Diajak Dika Ikut Hackathon
 
-## 📄 Lisensi
-
-<!-- Pilih lisensi, mis. MIT -->
-_Belum ditentukan._
+- Anggota: 
+1. Andika Indra Praja
+2. Prasetyo Aji Nursiam
+3. Raihan Dzaky Kurniawan 
+4. Salma Alesha Az Zahra
