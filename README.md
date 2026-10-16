@@ -17,6 +17,7 @@ Proyek ini dibuat untuk **hackathon**. Alat dapat disimulasikan penuh di [Wokwi]
 - [Langkah 3 — Setup Server Bot (Windows PowerShell + venv)](#-langkah-3--setup-server-bot-windows-powershell--venv)
 - [Langkah 4 — Instalasi Alat di Wokwi](#-langkah-4--instalasi-alat-di-wokwi)
 - [Langkah 5 — Uji Coba End-to-End](#-langkah-5--uji-coba-end-to-end)
+- [Keterbatasan Simulasi Wokwi & Rencana Hardware Asli](#-keterbatasan-simulasi-wokwi--rencana-hardware-asli)
 - [Perintah Bot Telegram](#-perintah-bot-telegram)
 - [Skema Rangkaian](#-skema-rangkaian)
 - [Topik & Format Pesan MQTT](#-topik--format-pesan-mqtt)
@@ -55,7 +56,7 @@ flowchart LR
 - ⏰ **Jam otomatis** dari aturan minum (mis. `3x sehari` → 07:00, 13:00, 19:00), bisa diubah per obat lewat `/ubah_jam`.
 - 🔕 **Jeda / aktifkan** pengingat per obat tanpa menghapusnya.
 - 🔔 **Alarm di alat**: buzzer, LED merah berkedip, layar OLED, dan LED hijau saat obat sudah diminum.
-- 🗣️ **Suara pengingat (TTS)** dalam Bahasa Indonesia dan Sunda, diputar di laptop server dan/atau dikirim sebagai voice note Telegram.
+- 🗣️ **Suara pengingat (TTS)** dalam Bahasa Indonesia dan Sunda, diputar di laptop server dan/atau dikirim sebagai voice note Telegram. *(Di simulasi Wokwi, suara tidak keluar dari alat; lihat [keterbatasan simulasi](#-keterbatasan-simulasi-wokwi--rencana-hardware-asli).)*
 - 📲 **Notifikasi real-time** ke keluarga: alat online, jadwal diterima, obat diminum, obat terlewat.
 - 🏷️ Beri nama alat (mis. "Mbah Sri") agar notifikasi lebih jelas.
 
@@ -346,6 +347,8 @@ const char* DEVICE_ID = "lansia-001";           // harus SAMA PERSIS dengan ID d
 
 Cara berinteraksi dengan alat di simulasi: klik tombol hijau **OK** untuk menandai obat sudah diminum.
 
+> 🔊 **Catatan:** Wokwi tidak mensimulasikan speaker/audio, jadi suara *text-to-speech* tidak bisa diputar oleh alat di simulasi. Kalimat pengingat hanya tercetak di Serial Monitor (`[SUARA] ...`). Di demo ini, suara diputar oleh **laptop server** lewat bot. Penjelasan lengkap dan rencana modul untuk alat asli ada di bagian [Keterbatasan Simulasi Wokwi & Rencana Hardware Asli](#-keterbatasan-simulasi-wokwi--rencana-hardware-asli).
+
 ---
 
 ## ✅ Langkah 5 — Uji Coba End-to-End
@@ -360,6 +363,51 @@ Cara berinteraksi dengan alat di simulasi: klik tombol hijau **OK** untuk menand
 4. **Pantau Serial Monitor** — akan muncul `[JADWAL] N pengingat tersimpan`, dan bot mengirim "📲 Alat sudah menerima N pengingat".
 5. **Cek jadwal** — kirim `/list_obat`.
 6. **Demo cepat** — atur jam satu obat ke 1–2 menit dari sekarang (WIB) lewat `/ubah_jam`, lalu tunggu alarm berbunyi. Untuk demo juri, kamu bisa memperpendek `ALARM_TIMEOUT_MS` di sketch (mis. `60 * 1000UL`) supaya notifikasi "terlewat" cepat muncul.
+
+---
+
+## 🔊 Keterbatasan Simulasi Wokwi & Rencana Hardware Asli
+
+> ⚠️ **Disclaimer:** Wokwi tidak dapat mensimulasikan speaker maupun keluaran audio (I²S), sehingga fitur *text-to-speech* **tidak bisa dijalankan oleh alat di simulasi**. Satu-satunya bunyi yang tersedia di Wokwi adalah nada sederhana dari buzzer.
+
+### Bagaimana demo ini menyiasatinya
+
+| Komponen | Perilaku di demo (Wokwi) |
+|---|---|
+| Buzzer di ESP32 | Berbunyi nada 2 kHz putus-putus saat alarm |
+| Fungsi `ucapkan()` di `sketch.ino` | Hanya mencetak kalimat ke Serial Monitor, mis. `[SUARA] Waktunya minum obat ... hari ini` |
+| Suara TTS | Dibuat dan diputar oleh **bot Python di laptop server** (gTTS) saat alat mengirim event `alarm_started`. Laptop berperan sebagai "speaker alat" |
+| Voice note Telegram | Opsional, aktifkan dengan `TTS_TELEGRAM=1` di `.env` |
+
+Bahasa suara (Indonesia atau Sunda) diatur lewat perintah `/bahasa`. Kalimat Sunda sebaiknya dicek penutur asli sebelum demo.
+
+### Rencana untuk alat asli (hardware fisik)
+
+Pada perangkat nyata, suara dapat keluar langsung dari alat. Opsi modul yang bisa dipakai:
+
+| Opsi | Modul | Cara kerja | Cocok untuk |
+|---|---|---|---|
+| **A. TTS online** | ESP32 + **MAX98357A** (amplifier I²S) + speaker 4–8 Ω | ESP32 mengambil suara TTS lewat WiFi dan memutarnya. Perlu library audio I²S, mis. [ESP32-audioI2S](https://github.com/schreibfaul1/ESP32-audioI2S), dengan fungsi `connecttospeech()` | Kalimat dinamis (nama obat apa pun), butuh internet |
+| **B. Rekaman offline** | ESP32 + **DFPlayer Mini** + microSD + speaker | File suara (mp3) direkam atau dibuat lebih dulu dan disimpan di kartu microSD | Tanpa internet, suara stabil dan jernih, tetapi nama obat tidak bisa dinamis |
+
+Rekomendasi: **opsi A** untuk mempertahankan kalimat dinamis seperti di demo, atau **opsi B** bila alat dipakai di rumah lansia yang koneksi internetnya tidak stabil.
+
+### Integrasi di kode
+
+Sketch sudah menyiapkan titik pemasangannya di fungsi `ucapkan()`:
+
+```cpp
+void ucapkan() {
+  String kalimat = "Waktunya minum obat " + alarmNama + " hari ini";
+  Serial.println("[SUARA] " + kalimat);
+  // Versi hardware (ESP32 + MAX98357A + speaker): panggil TTS di sini, misal
+  //   audio.connecttospeech(kalimat.c_str(), "id");
+}
+```
+
+Untuk opsi A, pasang library audio, inisialisasi I²S (BCLK, LRC, DIN), lalu aktifkan baris `audio.connecttospeech(...)` dan panggil `audio.loop()` di `loop()`.
+
+> 📌 **Perhatian pin:** modul I²S butuh 3 pin data (BCLK, LRC, DIN). Pilih pin yang tidak bentrok dengan pin proyek ini (4, 18, 21, 22, 26, 27), misalnya `BCLK=32`, `LRC=33`, `DIN=25` (sesuaikan dengan board-mu). Jika memakai bahasa Sunda, cek apakah layanan TTS yang dipakai mendukung kode bahasa `su`, atau gunakan opsi B dengan rekaman penutur asli.
 
 ---
 
@@ -490,8 +538,6 @@ suara_cache/
 SiMbah adalah **alat bantu pengingat**, bukan pengganti saran dokter atau apoteker. Hasil bacaan AI dapat keliru, jadi selalu cocokkan ringkasan jadwal dengan label obat asli sebelum menekan **Benar**. Kalimat pengingat berbahasa Sunda sebaiknya dicek penutur asli sebelum dipakai.
 
 ## 👥 Tim
-
-<!-- Isi nama tim dan anggota -->
 - Nama tim: 
 Tim Diajak Dika Ikut Hackathon
 
