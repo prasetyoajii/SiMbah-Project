@@ -167,7 +167,7 @@ Semua perintah di bawah dijalankan di **Windows PowerShell**.
 
 ```powershell
 git clone https://github.com/prasetyoajii/SiMbah-Project.git
-cd SiMbah
+cd SiMbah-Project
 ```
 
 Tanpa Git? Unduh repositori sebagai ZIP dari GitHub, ekstrak, lalu `cd` ke foldernya.
