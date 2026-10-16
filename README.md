@@ -166,7 +166,7 @@ Semua perintah di bawah dijalankan di **Windows PowerShell**.
 ### 3.1 Ambil kode
 
 ```powershell
-git clone https://github.com/<username-kamu>/SiMbah.git
+git clone https://github.com/prasetyoajii/SiMbah-Project.git
 cd SiMbah
 ```
 
